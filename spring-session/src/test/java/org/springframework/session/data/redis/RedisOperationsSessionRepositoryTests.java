@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
@@ -311,7 +312,7 @@ public class RedisOperationsSessionRepositoryTests {
 	@Test
 	public void redisSessionGetAttributes() {
 		String attrName = "attrName";
-		RedisSession session = this.redisRepository.new RedisSession();
+		RedisSession session = this.redisRepository.new RedisSession(UUID.randomUUID().toString());
 		assertThat(session.getAttributeNames()).isEmpty();
 		session.setAttribute(attrName, "attrValue");
 		assertThat(session.getAttributeNames()).containsOnly(attrName);

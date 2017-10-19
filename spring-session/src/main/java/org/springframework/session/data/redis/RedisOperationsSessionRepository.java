@@ -47,6 +47,8 @@ import org.springframework.session.events.SessionCreatedEvent;
 import org.springframework.session.events.SessionDeletedEvent;
 import org.springframework.session.events.SessionDestroyedEvent;
 import org.springframework.session.events.SessionExpiredEvent;
+import org.springframework.session.security.IdGenerationStrategy;
+import org.springframework.session.security.UUIDGenerationStrategy;
 import org.springframework.session.web.http.SessionRepositoryFilter;
 import org.springframework.util.Assert;
 
@@ -311,6 +313,8 @@ public class RedisOperationsSessionRepository implements
 
 	private RedisFlushMode redisFlushMode = RedisFlushMode.ON_SAVE;
 
+	private IdGenerationStrategy idGenerationStrategy = new UUIDGenerationStrategy();
+
 	/**
 	 * Allows creating an instance and uses a default {@link RedisOperations} for both
 	 * managing the session and the expirations.
@@ -382,6 +386,16 @@ public class RedisOperationsSessionRepository implements
 	public void setRedisFlushMode(RedisFlushMode redisFlushMode) {
 		Assert.notNull(redisFlushMode, "redisFlushMode cannot be null");
 		this.redisFlushMode = redisFlushMode;
+	}
+
+	/**
+	 * Sets the ID generation strategy. Default ID generation strategy is {@link UUIDGenerationStrategy}.
+	 *
+	 * @param idGenerationStrategy the new id generation strategy
+	 */
+	public void setIdGenerationStrategy(IdGenerationStrategy idGenerationStrategy) {
+		Assert.notNull(idGenerationStrategy, "idGenerationStrategy cannot be null");
+		this.idGenerationStrategy = idGenerationStrategy;
 	}
 
 	public void save(RedisSession session) {
@@ -480,7 +494,7 @@ public class RedisOperationsSessionRepository implements
 	}
 
 	public RedisSession createSession() {
-		RedisSession redisSession = new RedisSession();
+		RedisSession redisSession = new RedisSession(this.idGenerationStrategy.generateId());
 		if (this.defaultMaxInactiveInterval != null) {
 			redisSession.setMaxInactiveIntervalInSeconds(this.defaultMaxInactiveInterval);
 		}
@@ -677,9 +691,11 @@ public class RedisOperationsSessionRepository implements
 		/**
 		 * Creates a new instance ensuring to mark all of the new attributes to be
 		 * persisted in the next save operation.
+		 *
+		 * @param id the session id
 		 */
-		RedisSession() {
-			this(new MapSession());
+		RedisSession(String id) {
+			this(new MapSession(id));
 			this.delta.put(CREATION_TIME_ATTR, getCreationTime());
 			this.delta.put(MAX_INACTIVE_ATTR, getMaxInactiveIntervalInSeconds());
 			this.delta.put(LAST_ACCESSED_ATTR, getLastAccessedTime());
